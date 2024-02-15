@@ -349,8 +349,14 @@ _PG_init(void)
 	hash_ctl.hash = oid_hash;
 	plv8_proc_cache_hash = hash_create("PLv8 Procedures", 32,
 									   &hash_ctl, HASH_ELEM | HASH_FUNCTION);
+	config_generic *guc_value;
 
-	DefineCustomStringVariable("plv8.start_proc",
+#define START_PROC_VAR "plv8.start_proc"
+ 	guc_value = plv8_find_option(START_PROC_VAR);
+ 	if (guc_value != NULL) {
+ 		plv8_start_proc = plv8_string_option(guc_value);
+ 	} else {
+		DefineCustomStringVariable(START_PROC_VAR,
 							   gettext_noop("PLV8 function to run once when PLV8 is first used."),
 							   NULL,
 							   &plv8_start_proc,
@@ -361,8 +367,15 @@ _PG_init(void)
 #endif
 							   NULL,
 							   NULL);
+	}
+#undef START_PROC_VAR
 
-	DefineCustomStringVariable("plv8.icu_data",
+#define ICU_DATA_VAR "plv8.icu_data"
+ 	guc_value = plv8_find_option(ICU_DATA_VAR);
+ 	if (guc_value != NULL) {
+ 		plv8_icu_data = plv8_string_option(guc_value);
+ 	} else {
+ 		DefineCustomStringVariable(ICU_DATA_VAR,
 							   gettext_noop("ICU data file directory."),
 							   NULL,
 							   &plv8_icu_data,
@@ -373,9 +386,17 @@ _PG_init(void)
 #endif
 							   NULL,
 							   NULL);
+	}
+#undef ICU_DATA_VAR
 
-	DefineCustomStringVariable("plv8.v8_flags",
-							   gettext_noop("V8 engine initialization flags (e.g. --harmony for all current harmony features)."),
+#define V8_FLAGS_VAR "plv8.v8_flags"
+ 	guc_value = plv8_find_option(V8_FLAGS_VAR);
+		if (guc_value != NULL) {
+ 		plv8_v8_flags = plv8_string_option(guc_value);
+ 	} else {
+ 		DefineCustomStringVariable(V8_FLAGS_VAR,
+ 								   gettext_noop(
+ 										   "V8 engine initialization flags (e.g. --harmony for all current harmony features)."),
 							   NULL,
 							   &plv8_v8_flags,
 							   NULL,
@@ -385,8 +406,15 @@ _PG_init(void)
 #endif
 							   NULL,
 							   NULL);
+	}
+#undef V8_FLAGS_VAR
 
-	DefineCustomIntVariable("plv8.debugger_port",
+#define DEBUGGER_PORT_VAR "plv8.debugger_port"
+ 	guc_value = plv8_find_option(DEBUGGER_PORT_VAR);
+ 	if (guc_value != NULL) {
+ 		plv8_debugger_port = plv8_int_option(guc_value);
+ 	} else {
+ 		DefineCustomIntVariable(DEBUGGER_PORT_VAR,
 							gettext_noop("V8 remote debug port."),
 							gettext_noop("The default value is 35432.  "
 										 "This is effective only if PLV8 is built with ENABLE_DEBUGGER_SUPPORT."),
@@ -398,9 +426,16 @@ _PG_init(void)
 #endif
 							NULL,
 							NULL);
+	}
+#undef DEBUGGER_PORT_VAR
 
 #ifdef EXECUTION_TIMEOUT
-	DefineCustomIntVariable("plv8.execution_timeout",
+#define EXECUTION_TIMEOUT_VAR "plv8.execution_timeout"
+ 	guc_value = plv8_find_option(EXECUTION_TIMEOUT_VAR);
+ 	if (guc_value != NULL) {
+ 		plv8_execution_timeout = plv8_int_option(guc_value);
+ 	} else {
+ 		DefineCustomIntVariable(EXECUTION_TIMEOUT_
 							gettext_noop("V8 execution timeout."),
 							gettext_noop("The default value is 300 seconds.  "
 										 "This allows you to override the default execution timeout."),
@@ -412,9 +447,16 @@ _PG_init(void)
 #endif
 							NULL,
 							NULL);
+	}
+#undef EXECUTION_TIMEOUT_VAR
 #endif
 
-	DefineCustomIntVariable("plv8.memory_limit",
+#define MEMORY_LIMIT_VAR "plv8.memory_limit"
+ 	guc_value = plv8_find_option(MEMORY_LIMIT_VAR);
+ 	if (guc_value != NULL) {
+ 		plv8_memory_limit = plv8_int_option(guc_value);
+ 	} else {
+ 		DefineCustomIntVariable(MEMORY_LIMIT_VAR,
 							gettext_noop("Per-isolate memory limit in MBytes"),
 							gettext_noop("The default value is 256 MB"),
 							(int*)&plv8_memory_limit,
@@ -425,6 +467,8 @@ _PG_init(void)
 #endif
 							NULL,
 							NULL);
+	}
+#undef MEMORY_LIMIT_VAR
 
 	RegisterXactCallback(plv8_xact_cb, NULL);
 
