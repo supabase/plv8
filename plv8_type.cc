@@ -181,11 +181,11 @@ GetJsonbValue(JsonbValue *scalarVal) {
     strncpy(t, scalarVal->val.string.val, scalarVal->val.string.len);
     t[ scalarVal->val.string.len ] = '\0';
 
-		return Local<v8::Value>::New(isolate, String::NewFromUtf8(isolate, t));
+		return Local<v8::Value>::New(isolate, v8::String::NewFromUtf8(isolate, t));
   } else if (scalarVal->type == jbvNumeric) {
 		return Local<v8::Value>::New(isolate, Number::New(isolate, DatumGetFloat8(DirectFunctionCall1(numeric_float8, PointerGetDatum(scalarVal->val.numeric)))));
   } else if (scalarVal->type == jbvBool) {
-		return Local<v8::Value>::New(isolate, Boolean::New(isolate, scalarVal->val.boolean));
+		return Local<v8::Value>::New(isolate, v8::Boolean::New(isolate, scalarVal->val.boolean));
   } else {
     elog(ERROR, "unknown jsonb scalar type");
     return Local<v8::Value>::New(isolate, Null(isolate));
@@ -407,7 +407,7 @@ JsonbFromValue(JsonbParseState **pstate, Local<v8::Value> value, JsonbIteratorTo
 	// if the token type is a key, the only valid value is jbvString
 	if (type == WJB_KEY) {
 		val.type = jbvString;
-		String::Utf8Value utf8(isolate, value->ToString(isolate));
+		v8::String::Utf8Value utf8(isolate, value->ToString(isolate));
 		val.val.string.val = ToCStringCopy(utf8);
 		val.val.string.len = utf8.length();
 	} else {
@@ -420,7 +420,7 @@ JsonbFromValue(JsonbParseState **pstate, Local<v8::Value> value, JsonbIteratorTo
 			return NULL;
 		} else if (value->IsString()) {
 			val.type = jbvString;
-			String::Utf8Value utf8(isolate, value->ToString(isolate));
+			v8::String::Utf8Value utf8(isolate, value->ToString(isolate));
 			val.val.string.val = ToCStringCopy(utf8);
 			val.val.string.len = utf8.length();
 		} else if (value->IsNumber()) {
@@ -450,7 +450,7 @@ JsonbFromValue(JsonbParseState **pstate, Local<v8::Value> value, JsonbIteratorTo
 		} else {
 			LogType(value, false);
 			val.type = jbvString;
-			String::Utf8Value utf8(isolate, value->ToString(isolate));
+			v8::String::Utf8Value utf8(isolate, value->ToString(isolate));
 			val.val.string.val = ToCStringCopy(utf8);
 			val.val.string.len = utf8.length();
 		}
@@ -685,7 +685,7 @@ ToScalarDatum(Handle<v8::Value> value, bool *isnull, plv8_type *type)
 		break;
 	case NUMERICOID:
 		if (value->IsBigInt()) {
-			String::Utf8Value utf8(isolate, value->ToString(isolate));
+			v8::String::Utf8Value utf8(isolate, value->ToString(isolate));
 			return DirectFunctionCall3(numeric_in, (Datum) *utf8, ObjectIdGetDatum(InvalidOid), Int32GetDatum((int32) -1));
 		}
 		if (value->IsNumber())
@@ -931,7 +931,7 @@ ToScalarValue(Datum datum, bool isnull, plv8_type *type)
 	case OIDOID:
 		return Uint32::New(isolate, DatumGetObjectId(datum));
 	case BOOLOID:
-		return Boolean::New(isolate, DatumGetBool(datum));
+		return v8::Boolean::New(isolate, DatumGetBool(datum));
 	case INT2OID:
 		return Int32::New(isolate, DatumGetInt16(datum));
 	case INT4OID:
@@ -968,7 +968,7 @@ ToScalarValue(Datum datum, bool isnull, plv8_type *type)
 		const char *str = VARDATA_ANY(p);
 		int			len = VARSIZE_ANY_EXHDR(p);
 
-		Local<String>	result = ToString(str, len);
+		Local<v8::String>	result = ToString(str, len);
 
 		if (p != DatumGetPointer(datum))
 			pfree(p);	// free if detoasted
@@ -1111,7 +1111,7 @@ ToRecordValue(Datum datum, bool isnull, plv8_type *type)
 	return result;
 }
 
-Local<String>
+Local<v8::String>
 ToString(Datum value, plv8_type *type)
 {
 	int		encoding = GetDatabaseEncoding();
@@ -1135,23 +1135,23 @@ ToString(Datum value, plv8_type *type)
 	}
 	PG_END_TRY();
 
-	Local<String>	result =
+	Local<v8::String>	result =
 		encoding == PG_UTF8
-			? String::NewFromUtf8(Isolate::GetCurrent(), str)
+			? v8::String::NewFromUtf8(Isolate::GetCurrent(), str)
 			: ToString(str, strlen(str), encoding);
 	pfree(str);
 
 	return result;
 }
 
-Local<String>
+Local<v8::String>
 ToString(const char *str, int len, int encoding)
 {
 	char		   *utf8;
 	Isolate		   *isolate = Isolate::GetCurrent();
 
 	if (str == NULL) {
-		return String::NewFromUtf8(isolate, "(null)", String::kNormalString, 6);
+		return v8::String::NewFromUtf8(isolate, "(null)", v8::String::kNormalString, 6);
 	}
 	if (len < 0)
 		len = strlen(str);
@@ -1169,7 +1169,7 @@ ToString(const char *str, int len, int encoding)
 
 	if (utf8 != str)
 		len = strlen(utf8);
-	Local<String> result = String::NewFromUtf8(isolate, utf8, String::kNormalString, len);
+	Local<v8::String> result = v8::String::NewFromUtf8(isolate, utf8, v8::String::kNormalString, len);
 	if (utf8 != str)
 		pfree(utf8);
 	return result;
@@ -1180,7 +1180,7 @@ ToString(const char *str, int len, int encoding)
  * The result could be same as utf8 input, or palloc'ed one.
  */
 char *
-ToCString(const String::Utf8Value &value)
+ToCString(const v8::String::Utf8Value &value)
 {
 	char *str = const_cast<char *>(*value);
 	if (str == NULL)
@@ -1209,7 +1209,7 @@ ToCString(const String::Utf8Value &value)
  * The result is always palloc'ed one.
  */
 char *
-ToCStringCopy(const String::Utf8Value &value)
+ToCStringCopy(const v8::String::Utf8Value &value)
 {
 	char *str;
 	const char *utf8 = *value;
@@ -1307,11 +1307,11 @@ bool CString::toStdString(v8::Handle<v8::Value> value, std::string &out)
 {
 	if(value.IsEmpty()) return false;
 	Isolate* isolate = Isolate::GetCurrent();
-	String::Utf8Value utf8(isolate, value->ToString(isolate));
+	v8::String::Utf8Value utf8(isolate, value->ToString(isolate));
 
   // convert it to string
 	//auto obj = value->ToString(isolate);
-	//String::Utf8Value utf8(val);
+	//v8::String::Utf8Value utf8(val);
 	if(*utf8) {
 		out = *utf8;
 		return true;
