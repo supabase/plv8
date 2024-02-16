@@ -969,6 +969,8 @@ plv8_CursorFetch(const FunctionCallbackInfo<v8::Value> &args)
 	}
 	PG_CATCH();
 	{
+		SPI_rollback();
+ 		SPI_finish();
 		throw pg_error();
 	}
 	PG_END_TRY();
@@ -1034,6 +1036,8 @@ plv8_CursorMove(const FunctionCallbackInfo<v8::Value>& args)
 	}
 	PG_CATCH();
 	{
+		SPI_rollback();
+ 		SPI_finish();
 		throw pg_error();
 	}
 	PG_END_TRY();
@@ -1060,6 +1064,7 @@ plv8_CursorClose(const FunctionCallbackInfo<v8::Value> &args)
 	}
 	PG_CATCH();
 	{
+		SPI_finish();
 		throw pg_error();
 	}
 	PG_END_TRY();
